@@ -6,6 +6,7 @@
 
 | 路径 | 行数 | 说明 |
 |---|---|---|
+| `README.md` | 114 | GitHub 项目主页：功能、5 张真实运行截图、快速开始、数据格式、开发命令、限制与文档索引 |
 | `PRD.md` | 105 | 产品需求文档，需求唯一权威来源（数据模型、FR-1~FR-8、V1 排除项、验收标准） |
 | `AGENTS.md` | 48 | 项目指引：技术栈、目录结构、关键设计决策、强制开发规范 |
 | `CODE-INDEX.md` | - | 本文件，代码索引 |
@@ -63,7 +64,18 @@
 | 路径 | 行数 | 说明 |
 |---|---|---|
 | `src/shared/types.ts` | 36 | 主进程与渲染进程共享类型：`Item`、`LibraryFile`、`ProbeResult`、`WindowState`、`TYPE_LABEL` |
-| `scripts/smoke.mjs` | 271 | 冒烟测试：写入测试数据 → 启动打包 exe（CDP 调试端口）→ DOM 断言 13 项 → 清理 |
+| `scripts/smoke.mjs` | 271 | 冒烟测试：写入测试数据 → 启动打包 exe（CDP 调试端口）→ DOM 断言 14 项 → 清理 |
+| `scripts/screenshots.mjs` | 261 | 截图脚本：启动真实 exe 并通过 CDP 切换 5 个界面状态截图到 `docs/screenshots/` |
+
+## 配图
+
+| 路径 | 说明 |
+|---|---|
+| `docs/screenshots/01-home.png` | 根页面：类型四卡片 + 标签卡片 |
+| `docs/screenshots/02-tag-group.png` | 标签分组页（项目A） |
+| `docs/screenshots/03-context-menu.png` | 右键菜单展开态 |
+| `docs/screenshots/04-search.png` | 搜索结果态 |
+| `docs/screenshots/05-add-modal.png` | 添加条目弹窗 |
 
 ## 构建产物（不进版本库）
 
