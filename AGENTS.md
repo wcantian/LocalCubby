@@ -15,7 +15,7 @@
 ## 计划目录结构
 
 ```
-BofanTool/
+LocalCubby/
 ├─ PRD.md              # 产品需求（权威）
 ├─ AGENTS.md           # 本文件
 ├─ CODE-INDEX.md       # 代码索引（强制维护，见下）
