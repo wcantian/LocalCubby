@@ -187,6 +187,11 @@ try {
   const wsUrl = await waitForPage()
   await connect(wsUrl)
 
+  // 固定界面语言为中文，避免宿主机系统语言影响断言
+  await evaluate(`localStorage.setItem('localcubby.lang', 'zh-CN'); true`)
+  await evaluate(`location.reload(); true`)
+  await new Promise((r) => setTimeout(r, 1200))
+
   // 等 React 挂载
   for (let attempt = 0; attempt < 40; attempt++) {
     const ready = await evaluate(`Boolean(document.querySelector('.toolbar') && document.querySelector('.type-card'))`)
@@ -233,7 +238,7 @@ try {
   check('清空搜索回到卡片', cleared.typeCards.length, 4)
 
   // 打开添加弹窗并检查类型推断
-  await evaluate(`document.querySelectorAll('.toolbar .btn')[1].click(); true`)
+  await evaluate(`document.querySelector('.toolbar .btn-primary').click(); true`)
   await new Promise((r) => setTimeout(r, 400))
   const modalTitle = await evaluate(`document.querySelector('.modal-head h2')?.textContent ?? ''`)
   check('添加弹窗打开', modalTitle, '添加条目')
@@ -273,6 +278,24 @@ try {
   const linkItem = saved.items.find((item) => item.title === '示例网址')
   check('新增条目已落盘', Boolean(linkItem), true)
   check('网址自动补协议', linkItem?.path, 'https://example.com')
+
+  // 多语言：切到英文
+  await evaluate(`document.querySelector('[data-role="lang"]').click(); true`)
+  await new Promise((r) => setTimeout(r, 500))
+  const english = await evaluate(`({
+    search: document.querySelector('.searchbox input').placeholder,
+    types: [...document.querySelectorAll('.type-card .name')].map((el) => el.textContent),
+    add: document.querySelector('.toolbar .btn-primary').textContent.trim()
+  })`)
+  check('英文界面搜索占位符', english.search, 'Search title, description, path, tags')
+  check('英文界面类型名', english.types, ['Program', 'Document', 'Folder', 'Link'])
+  check('英文界面添加按钮', english.add, 'Add')
+
+  // 切回中文
+  await evaluate(`document.querySelector('[data-role="lang"]').click(); true`)
+  await new Promise((r) => setTimeout(r, 500))
+  const backToZh = await evaluate(`document.querySelector('.toolbar .btn-primary').textContent.trim()`)
+  check('切回中文界面', backToZh, '添加')
 } catch (error) {
   console.error('冒烟测试异常：', error.message)
   failures.push('运行异常')

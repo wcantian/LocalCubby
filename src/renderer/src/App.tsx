@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { MouseEvent } from 'react'
 import type { Item, ItemType } from '../../shared/types'
-import { TYPE_LABEL } from '../../shared/types'
 import { Icon, IconDefs } from './components/Icons'
 import { RootView } from './components/RootView'
 import { ItemGrid } from './components/ItemGrid'
 import { ContextMenu } from './components/ContextMenu'
 import { ItemModal } from './components/ItemModal'
 import type { Draft } from './components/ItemModal'
+import { TYPE_KEY, useI18n } from './i18n'
 import { compareZh, inferType, matchItem, sortItems, titleFromPath, uid } from './utils'
 
 type View =
@@ -23,6 +23,7 @@ type ModalState = { mode: 'add'; initial?: Draft } | { mode: 'edit'; initial: Dr
 const SORT_KEY = 'localcubby.sort'
 
 export default function App(): JSX.Element {
+  const { t, lang, toggleLang } = useI18n()
   const [items, setItems] = useState<Item[]>([])
   const [loaded, setLoaded] = useState(false)
   const [view, setView] = useState<View>({ kind: 'root' })
@@ -143,15 +144,21 @@ export default function App(): JSX.Element {
   }, [view, items, sortMode])
 
   const groupTitle =
-    view.kind === 'type' ? TYPE_LABEL[view.value] : view.kind === 'tag' ? view.value : view.kind === 'uncat' ? '未分类' : ''
+    view.kind === 'type'
+      ? t(TYPE_KEY[view.value])
+      : view.kind === 'tag'
+        ? view.value
+        : view.kind === 'uncat'
+          ? t('uncategorized')
+          : ''
 
   const openItem = async (item: Item): Promise<void> => {
     const error = await window.api.openItem(item)
-    if (error) window.alert(`打开失败：${error}\n\n${item.path}`)
+    if (error) window.alert(t('openFailed', { error, path: item.path }))
   }
 
   const askDelete = async (item: Item): Promise<void> => {
-    const confirmed = window.confirm(`确定删除「${item.title}」？\n\n只从清单移除，不会删除磁盘上的文件。`)
+    const confirmed = window.confirm(t('deleteConfirm', { title: item.title }))
     if (!confirmed) return
     await persist(items.filter((entry) => entry.id !== item.id))
   }
@@ -200,22 +207,31 @@ export default function App(): JSX.Element {
           <Icon name="search" size={16} color="#6b6b6b" />
           <input
             value={query}
-            placeholder="搜索标题、说明、路径、标签"
+            placeholder={t('searchPlaceholder')}
             onChange={(event) => setQuery(event.target.value)}
           />
           {searching && (
-            <button className="clear" onClick={() => setQuery('')} title="清空搜索">
+            <button className="clear" onClick={() => setQuery('')} title={t('clearSearch')}>
               ✕
             </button>
           )}
         </div>
-        <button className="btn" onClick={toggleSort} title="切换排序方式">
+        <button className="btn" onClick={toggleSort} title={t('sortToggle')}>
           <Icon name="sort" size={15} />
-          {sortMode === 'added' ? '添加顺序' : '名称'}
+          {sortMode === 'added' ? t('sortAdded') : t('sortName')}
+        </button>
+        <button
+          className="btn"
+          data-role="lang"
+          onClick={toggleLang}
+          title={t('switchLang')}
+          style={{ minWidth: 46, justifyContent: 'center' }}
+        >
+          {lang === 'zh-CN' ? 'EN' : '中'}
         </button>
         <button className="btn btn-primary" onClick={() => setModal({ mode: 'add' })}>
           <Icon name="plus" size={15} />
-          添加
+          {t('add')}
         </button>
       </div>
 
@@ -223,13 +239,13 @@ export default function App(): JSX.Element {
         {!loaded ? null : searching ? (
           <>
             <div className="group-head" style={{ marginBottom: 14 }}>
-              <h3>搜索结果</h3>
-              <span className="count">{searchResults.length} 项 · 匹配标题 / 说明 / 路径 / 标签</span>
+              <h3>{t('searchResults')}</h3>
+              <span className="count">{t('searchSummary', { n: searchResults.length })}</span>
             </div>
             {searchResults.length > 0 ? (
               <ItemGrid items={searchResults} missing={missing} onOpen={openItem} onMenu={openMenu} />
             ) : (
-              <div className="hint-line">没有匹配的条目</div>
+              <div className="hint-line">{t('noMatch')}</div>
             )}
           </>
         ) : view.kind === 'root' ? (
@@ -248,10 +264,10 @@ export default function App(): JSX.Element {
             <div className="subhead">
               <button className="back" onClick={() => setView({ kind: 'root' })}>
                 <Icon name="back" size={15} />
-                返回
+                {t('back')}
               </button>
               <h2>{groupTitle}</h2>
-              <span className="sub-num">{groupList.length} 项</span>
+              <span className="sub-num">{t('itemsCount', { n: groupList.length })}</span>
             </div>
             <ItemGrid items={groupList} missing={missing} onOpen={openItem} onMenu={openMenu} />
           </>
@@ -281,7 +297,7 @@ export default function App(): JSX.Element {
         />
       )}
 
-      {dragging && <div className="drop-overlay">松开以添加条目</div>}
+      {dragging && <div className="drop-overlay">{t('dropHint')}</div>}
     </div>
   )
 }

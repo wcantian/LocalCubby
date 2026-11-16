@@ -191,6 +191,11 @@ try {
   await connect(wsUrl)
   await send('Page.enable')
 
+  // 固定界面语言为中文，保证配图一致
+  await evaluate(`localStorage.setItem('localcubby.lang', 'zh-CN'); true`)
+  await evaluate(`location.reload(); true`)
+  await pause(1200)
+
   for (let attempt = 0; attempt < 40; attempt++) {
     if (await evaluate(`Boolean(document.querySelector('.type-card'))`)) break
     await pause(250)

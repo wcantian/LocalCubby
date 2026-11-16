@@ -33,9 +33,3 @@ export interface WindowState {
   y?: number
 }
 
-export const TYPE_LABEL: Record<ItemType, string> = {
-  program: '程序',
-  doc: '文档',
-  folder: '文件夹',
-  link: '网络连接'
-}

@@ -6,12 +6,12 @@
 
 | 路径 | 行数 | 说明 |
 |---|---|---|
-| `README.md` | 114 | GitHub 项目主页：功能、5 张真实运行截图、快速开始、数据格式、开发命令、限制与文档索引 |
-| `PRD.md` | 105 | 产品需求文档，需求唯一权威来源（数据模型、FR-1~FR-8、V1 排除项、验收标准） |
-| `AGENTS.md` | 48 | 项目指引：技术栈、目录结构、关键设计决策、强制开发规范 |
+| `README.md` | 112 | GitHub 项目主页：功能、5 张真实运行截图、快速开始、数据格式、开发命令、限制与文档索引 |
+| `PRD.md` | 122 | 产品需求文档，需求唯一权威来源（数据模型、FR-1~FR-9、V1 排除项、验收标准）。**仅本地维护，不上传** |
+| `AGENTS.md` | 51 | 项目指引：技术栈、目录结构、关键设计决策、强制开发规范。**仅本地维护，不上传** |
 | `CODE-INDEX.md` | - | 本文件，代码索引 |
-| `todo-list/README.md` | 31 | 任务清单（V1 分四阶段登记，V2 候选） |
-| `dev-log/` | - | 开发日志，按 `YYYY-MM-DD.md` 归档 |
+| `todo-list/README.md` | 34 | 任务清单（V1 分四阶段登记，V2 候选）。**仅本地维护，不上传** |
+| `dev-log/` | - | 开发日志，按 `YYYY-MM-DD.md` 归档。**仅本地维护，不上传** |
 
 ## 设计稿
 
@@ -28,7 +28,7 @@
 | `tsconfig.json` | 7 | 引用式根配置 |
 | `tsconfig.node.json` | 19 | 主进程/preload/shared 的 TS 配置（Node + DOM lib） |
 | `tsconfig.web.json` | 19 | 渲染进程 TS 配置（react-jsx + DOM lib） |
-| `.gitignore` | 7 | 忽略 node_modules / out / release / data / tmp-smoke / tsbuildinfo |
+| `.gitignore` | 13 | 忽略 node_modules / out / release / data / tmp-smoke / tmp-shot / tsbuildinfo，以及内部文档（PRD、AGENTS、todo-list、dev-log） |
 
 ## 主进程
 
@@ -48,24 +48,25 @@
 | 路径 | 行数 | 说明 |
 |---|---|---|
 | `src/renderer/index.html` | 15 | 页面入口与 CSP（放行 dev 内联脚本与 HMR 连接） |
-| `src/renderer/src/main.tsx` | 9 | React 挂载 |
-| `src/renderer/src/App.tsx` | 255 | 应用主状态：视图路由（root/type/tag/uncat）、搜索、排序、失效检测、拖拽入窗、右键菜单与弹窗编排、增删改持久化 |
+| `src/renderer/src/main.tsx` | 12 | React 挂载，外层包 `I18nProvider` |
+| `src/renderer/src/App.tsx` | 271 | 应用主状态：视图路由（root/type/tag/uncat）、搜索、排序、语言切换、失效检测、拖拽入窗、右键菜单与弹窗编排、增删改持久化 |
+| `src/renderer/src/i18n.tsx` | 157 | 中英双语文案与 `I18nProvider`/`useI18n`：默认跟随系统语言、切换持久化 `localStorage`、`{n}` 参数插值、`TYPE_KEY` 类型名映射 |
 | `src/renderer/src/styles.css` | 525 | 全部样式，沿用设计稿的设计变量与组件样式 |
 | `src/renderer/src/utils.ts` | 71 | 类型推断、标题推导、URL 规范化、中文拼音排序、搜索匹配 |
 | `src/renderer/src/global.d.ts` | 17 | 声明 `window.api` 接口类型（不引入 electron 类型到 web 项目） |
-| `src/renderer/src/components/RootView.tsx` | 87 | 根页面：类型四卡片 + 标签卡片 + 未分类 + 空库引导 |
-| `src/renderer/src/components/ItemGrid.tsx` | 36 | 条目网格与条目卡片（四类图标、标题、说明、失效态） |
-| `src/renderer/src/components/ItemModal.tsx` | 189 | 添加/编辑弹窗：路径/网址、标题、说明、类型分段、标签 chip 与自动补全、浏览与选目录 |
-| `src/renderer/src/components/ContextMenu.tsx` | 64 | 右键菜单：打开、打开所在目录（link 不显示）、编辑、删除；边界翻转与外部点击关闭 |
+| `src/renderer/src/components/RootView.tsx` | 88 | 根页面：类型四卡片 + 标签卡片 + 未分类 + 空库引导 |
+| `src/renderer/src/components/ItemGrid.tsx` | 39 | 条目网格与条目卡片（四类图标、标题、说明、失效态） |
+| `src/renderer/src/components/ItemModal.tsx` | 190 | 添加/编辑弹窗：路径/网址、标题、说明、类型分段、标签 chip 与自动补全、浏览与选目录 |
+| `src/renderer/src/components/ContextMenu.tsx` | 66 | 右键菜单：打开、打开所在目录（link 不显示）、编辑、删除；边界翻转与外部点击关闭 |
 | `src/renderer/src/components/Icons.tsx` | 175 | SVG symbol 定义与 `Icon` 组件（四类类型图标 + 通用小图标） |
 
 ## 共享与脚本
 
 | 路径 | 行数 | 说明 |
 |---|---|---|
-| `src/shared/types.ts` | 36 | 主进程与渲染进程共享类型：`Item`、`LibraryFile`、`ProbeResult`、`WindowState`、`TYPE_LABEL` |
-| `scripts/smoke.mjs` | 271 | 冒烟测试：写入测试数据 → 启动打包 exe（CDP 调试端口）→ DOM 断言 14 项 → 清理 |
-| `scripts/screenshots.mjs` | 261 | 截图脚本：启动真实 exe 并通过 CDP 切换 5 个界面状态截图到 `docs/screenshots/` |
+| `src/shared/types.ts` | 30 | 主进程与渲染进程共享类型：`Item`、`LibraryFile`、`ProbeResult`、`WindowState`（类型显示名在 i18n 提供） |
+| `scripts/smoke.mjs` | 291 | 冒烟测试：写入测试数据 → 启动打包 exe（CDP 调试端口）→ 固定中文界面 → DOM 断言 18 项（含中英切换）→ 清理 |
+| `scripts/screenshots.mjs` | 265 | 截图脚本：启动真实 exe、固定中文界面，通过 CDP 切换 5 个界面状态截图到 `docs/screenshots/` |
 
 ## 配图
 

@@ -1,7 +1,7 @@
 import type { ItemType } from '../../../shared/types'
-import { TYPE_LABEL } from '../../../shared/types'
 import { Icon } from './Icons'
 import { typeColor } from '../utils'
+import { TYPE_KEY, useI18n } from '../i18n'
 
 const TYPE_ORDER: ItemType[] = ['program', 'doc', 'folder', 'link']
 
@@ -26,15 +26,17 @@ export function RootView({
   onPickUncat,
   onAdd
 }: Props): JSX.Element {
+  const { t } = useI18n()
+
   if (total === 0) {
     return (
       <div className="empty">
         <Icon name="box" size={56} color="#c4c4c4" />
-        <h3>还没有收录任何东西</h3>
-        <p>把程序、文档、文件夹拖进窗口，或点「添加」手动填写</p>
+        <h3>{t('emptyTitle')}</h3>
+        <p>{t('emptyHint')}</p>
         <button className="btn btn-primary" onClick={onAdd}>
           <Icon name="plus" size={15} />
-          添加第一个条目
+          {t('emptyAction')}
         </button>
       </div>
     )
@@ -46,16 +48,16 @@ export function RootView({
     <>
       <div className="group">
         <div className="group-head">
-          <h3>类型</h3>
-          <span className="count">共 {total} 项</span>
+          <h3>{t('typeHeading')}</h3>
+          <span className="count">{t('totalSummary', { n: total })}</span>
         </div>
         <div className="type-grid">
           {visibleTypes.map((type) => (
             <button key={type} className="type-card" onClick={() => onPickType(type)}>
               <Icon name={type} size={28} color={typeColor(type)} />
               <span className="txt">
-                <span className="name">{TYPE_LABEL[type]}</span>
-                <span className="num">{typeCounts[type]} 项</span>
+                <span className="name">{t(TYPE_KEY[type])}</span>
+                <span className="num">{t('itemsCount', { n: typeCounts[type] })}</span>
               </span>
             </button>
           ))}
@@ -65,8 +67,8 @@ export function RootView({
       {(tags.length > 0 || uncategorized > 0) && (
         <div className="group">
           <div className="group-head">
-            <h3>标签</h3>
-            <span className="count">共 {tags.length} 个</span>
+            <h3>{t('tagsHeading')}</h3>
+            <span className="count">{t('tagsSummary', { n: tags.length })}</span>
           </div>
           <div className="tag-grid">
             {tags.map((tag) => (
@@ -81,7 +83,7 @@ export function RootView({
             <div className="tag-grid" style={{ marginTop: 10 }}>
               <button className="tag-card uncat" onClick={onPickUncat}>
                 <span className="hash">·</span>
-                <span className="tname">未分类</span>
+                <span className="tname">{t('uncategorized')}</span>
                 <span className="tnum">{uncategorized}</span>
               </button>
             </div>

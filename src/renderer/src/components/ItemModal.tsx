@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ItemType } from '../../../shared/types'
-import { TYPE_LABEL } from '../../../shared/types'
 import { Icon } from './Icons'
 import { inferType, normalizeUrl, titleFromPath } from '../utils'
+import { TYPE_KEY, useI18n } from '../i18n'
 
 export interface Draft {
   id?: string
@@ -25,6 +25,7 @@ interface Props {
 const TYPE_ORDER: ItemType[] = ['program', 'doc', 'folder', 'link']
 
 export function ItemModal({ mode, initial, suggestions, onCancel, onSubmit }: Props): JSX.Element {
+  const { t } = useI18n()
   const [path, setPath] = useState(initial?.path ?? '')
   const [title, setTitle] = useState(initial?.title ?? '')
   const [desc, setDesc] = useState(initial?.desc ?? '')
@@ -86,30 +87,30 @@ export function ItemModal({ mode, initial, suggestions, onCancel, onSubmit }: Pr
     <div className="modal-mask" onMouseDown={(event) => event.target === event.currentTarget && onCancel()}>
       <div className="modal">
         <div className="modal-head">
-          <h2>{mode === 'add' ? '添加条目' : '编辑条目'}</h2>
-          <p>说明与标签可以留空，标题建议写清楚，它是搜索的主要依据</p>
+          <h2>{mode === 'add' ? t('modalAddTitle') : t('modalEditTitle')}</h2>
+          <p>{t('modalHint')}</p>
         </div>
 
         <div className="modal-body">
           <div className="field">
             <label>
-              {type === 'link' ? '网址' : '路径'} <span className="req">*</span>
+              {type === 'link' ? t('fieldUrl') : t('fieldPath')} <span className="req">*</span>
             </label>
             <div className="row">
               <input
                 ref={pathRef}
                 className="input"
                 value={path}
-                placeholder={type === 'link' ? 'https://example.com' : 'D:\\示例程序\\启动.bat'}
+                placeholder={type === 'link' ? 'https://example.com' : t('pathPlaceholder')}
                 onChange={(event) => applyPath(event.target.value)}
               />
               {type !== 'link' && (
                 <>
                   <button className="btn" style={{ height: 32 }} onClick={() => browse('file')}>
-                    浏览…
+                    {t('browseFile')}
                   </button>
                   <button className="btn" style={{ height: 32 }} onClick={() => browse('directory')}>
-                    目录…
+                    {t('browseFolder')}
                   </button>
                 </>
               )}
@@ -118,7 +119,7 @@ export function ItemModal({ mode, initial, suggestions, onCancel, onSubmit }: Pr
 
           <div className="field">
             <label>
-              标题 <span className="req">*</span>
+              {t('fieldTitle')} <span className="req">*</span>
             </label>
             <input
               className="input"
@@ -131,17 +132,17 @@ export function ItemModal({ mode, initial, suggestions, onCancel, onSubmit }: Pr
           </div>
 
           <div className="field">
-            <label>说明</label>
+            <label>{t('fieldDesc')}</label>
             <textarea
               className="input"
               value={desc}
-              placeholder="简要说明，会参与搜索"
+              placeholder={t('descPlaceholder')}
               onChange={(event) => setDesc(event.target.value)}
             />
           </div>
 
           <div className="field">
-            <label>类型</label>
+            <label>{t('fieldType')}</label>
             <div className="seg">
               {TYPE_ORDER.map((option) => (
                 <button
@@ -153,14 +154,14 @@ export function ItemModal({ mode, initial, suggestions, onCancel, onSubmit }: Pr
                   }}
                 >
                   <Icon name={option} size={14} />
-                  {TYPE_LABEL[option]}
+                  {t(TYPE_KEY[option])}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="field">
-            <label>标签</label>
+            <label>{t('fieldTags')}</label>
             <div className="taginput">
               {tags.map((tag) => (
                 <span className="chip" key={tag}>
@@ -173,7 +174,7 @@ export function ItemModal({ mode, initial, suggestions, onCancel, onSubmit }: Pr
               <input
                 list="tag-suggestions"
                 value={tagDraft}
-                placeholder="输入标签后回车…"
+                placeholder={t('tagPlaceholder')}
                 onChange={(event) => setTagDraft(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ',') {
@@ -196,10 +197,10 @@ export function ItemModal({ mode, initial, suggestions, onCancel, onSubmit }: Pr
 
         <div className="modal-foot">
           <button className="btn" onClick={onCancel}>
-            取消
+            {t('cancel')}
           </button>
           <button className="btn btn-primary" onClick={submit} disabled={!canSave}>
-            保存
+            {t('save')}
           </button>
         </div>
       </div>

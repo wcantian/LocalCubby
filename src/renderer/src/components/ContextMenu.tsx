@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { Item } from '../../../shared/types'
 import { Icon } from './Icons'
+import { useI18n } from '../i18n'
 
 interface Props {
   x: number
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function ContextMenu({ x, y, item, onOpen, onReveal, onEdit, onDelete, onClose }: Props): JSX.Element {
+  const { t } = useI18n()
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -48,22 +50,22 @@ export function ContextMenu({ x, y, item, onOpen, onReveal, onEdit, onDelete, on
     <div className="ctx-menu" style={{ left, top }} ref={ref}>
       <button className="mi" onClick={run(onOpen)}>
         <Icon name="open" size={15} color="#5c5c5c" />
-        打开
+        {t('menuOpen')}
       </button>
       {item.type !== 'link' && (
         <button className="mi" onClick={run(onReveal)}>
           <Icon name="reveal" size={15} color="#5c5c5c" />
-          打开所在目录
+          {t('menuReveal')}
         </button>
       )}
       <div className="sep" />
       <button className="mi" onClick={run(onEdit)}>
         <Icon name="edit" size={15} color="#5c5c5c" />
-        编辑
+        {t('menuEdit')}
       </button>
       <button className="mi danger" onClick={run(onDelete)}>
         <Icon name="trash" size={15} />
-        删除
+        {t('menuDelete')}
       </button>
     </div>
   )

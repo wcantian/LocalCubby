@@ -2,6 +2,7 @@ import type { MouseEvent } from 'react'
 import type { Item } from '../../../shared/types'
 import { Icon } from './Icons'
 import { typeColor } from '../utils'
+import { useI18n } from '../i18n'
 
 interface Props {
   items: Item[]
@@ -11,11 +12,14 @@ interface Props {
 }
 
 export function ItemGrid({ items, missing, onOpen, onMenu }: Props): JSX.Element {
+  const { t } = useI18n()
+  const missingLabel = t('missingPath')
+
   return (
     <div className="item-grid">
       {items.map((item) => {
         const isMissing = missing[item.path] === true
-        const tip = `${item.title}\n${item.path}${isMissing ? '\n路径不存在' : ''}`
+        const tip = `${item.title}\n${item.path}${isMissing ? `\n${missingLabel}` : ''}`
         return (
           <div
             key={item.id}
@@ -29,7 +33,7 @@ export function ItemGrid({ items, missing, onOpen, onMenu }: Props): JSX.Element
             </div>
             <div className="title">{item.title}</div>
             <div className="desc">{item.desc || '\u00a0'}</div>
-            {isMissing && <div className="badge-missing">路径不存在</div>}
+            {isMissing && <div className="badge-missing">{missingLabel}</div>}
           </div>
         )
       })}
