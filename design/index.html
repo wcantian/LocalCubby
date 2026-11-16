@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LocalCubby 设计稿 V1</title>
+<style>
+  :root{
+    /* 背景与表面 */
+    --bg:            #eceff3;
+    --win-bg:        #f3f3f3;
+    --surface:       #ffffff;
+    --surface-sub:   #fafafa;
+    --surface-hover: #f7fafd;
+
+    /* 边框 */
+    --border:        #e3e3e3;
+    --border-mid:    #d6d6d6;
+    --border-strong: #c4c4c4;
+
+    /* 文字 */
+    --text:          #1b1b1b;
+    --text-2:        #5c5c5c;
+    --text-3:        #6b6b6b;
+
+    /* 主色 */
+    --accent:        #0067c0;
+    --accent-hover:  #005ba4;
+    --accent-soft:   #e8f1fb;
+
+    /* 类型色 */
+    --c-program:     #0067c0;
+    --c-doc:         #b45309;
+    --c-folder:      #a86500;
+    --c-link:        #0f7490;
+    --c-danger:      #c42b1c;
+
+    /* 阴影 */
+    --sh-1: 0 1px 2px rgba(0,0,0,.05);
+    --sh-2: 0 2px 8px rgba(0,0,0,.07);
+    --sh-3: 0 8px 28px rgba(0,0,0,.16);
+
+    /* 圆角 */
+    --r-sm: 6px;
+    --r-md: 8px;
+    --r-lg: 10px;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html,body{ margin:0; padding:0; }
+
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============ 设计稿页面外壳 ============ */
+  .doc-head{
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 0 24px;
+  }
+  .doc-head h1{
+    margin: 0 0 6px;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -.2px;
+  }
+  .doc-head .meta{
+    color: var(--text-2);
+    font-size: 13px;
+  }
+  .doc-nav{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .doc-nav a{
+    font-size: 12px;
+    color: var(--text-2);
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--border-mid);
+    border-radius: 999px;
+    padding: 4px 12px;
+    transition: all .2s;
+  }
+  .doc-nav a:hover{
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  section{
+    max-width: 1000px;
+    margin: 0 auto 48px;
+  }
+  .sec-title{
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .sec-title .idx{
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--accent);
+    border-radius: 4px;
+    padding: 1px 7px;
+    letter-spacing: .3px;
+  }
+  .sec-title h2{
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .sec-title .hint{
+    font-size: 12px;
+    color: var(--text-3);
+  }
+  .notes{
+    margin: 12px 0 0;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    font-size: 12.5px;
+    color: var(--text-2);
+    line-height: 1.7;
+  }
+  .notes b{ color: var(--text); font-weight: 600; }
+  .notes ul{ margin: 4px 0 0; padding-left: 18px; }
+  .notes li{ margin: 2px 0; }
+
+  /* ============ 模拟窗口 ============ */
+  .win{
+    width: 1000px;
+    height: 700px;
+    background: var(--win-bg);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+  }
+
+  .titlebar{
+    height: 36px;
+    flex: 0 0 36px;
+    display: flex;
+    align-items: center;
+    padding: 0 0 0 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+  }
+  .titlebar .app-name{
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-2);
+    letter-spacing: .2px;
+  }
+  .titlebar .win-btns{
+    margin-left: auto;
+    display: flex;
+    height: 100%;
+  }
+  .titlebar .win-btns span{
+    width: 46px;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: var(--text-2);
+    font-size: 11px;
+  }
+  .titlebar .win-btns span.close:hover{ background: #e81123; color: #fff; }
+
+  /* 工具栏 */
+  .toolbar{
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: var(--win-bg);
+  }
+  .searchbox{
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    padding: 0 12px;
+    background: var(--surface);
+    border: 1px solid var(--border-mid);
+    border-radius: var(--r-sm);
+    box-shadow: var(--sh-1);
+  }
+  .searchbox.focused{
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,103,192,.15);
+  }
+  .searchbox input{
+    flex: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .searchbox input::placeholder{ color: var(--text-3); }
+  .searchbox .ph{ color: var(--text-3); font-size: 13px; }
+
+  .btn{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border-mid);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .18s, border-color .18s, box-shadow .18s;
+    white-space: nowrap;
+  }
+  .btn:hover{ background: var(--surface-hover); border-color: var(--border-strong); }
+  .btn-primary{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 500;
+    box-shadow: var(--sh-1);
+  }
+  .btn-primary:hover{ background: var(--accent-hover); border-color: var(--accent-hover); }
+
+  /* 内容区 */
+  .content{
+    flex: 1 1 auto;
+    overflow: hidden;
+    padding: 4px 20px 20px;
+  }
+  .group + .group{ margin-top: 24px; }
+  .group-head{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+  }
+  .group-head h3{
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-2);
+    letter-spacing: .3px;
+  }
+  .group-head .count{
+    font-size: 11.5px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 类型卡片 */
+  .type-grid{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .type-card{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 84px;
+    padding: 0 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: var(--sh-1);
+    cursor: pointer;
+    transition: border-color .18s, box-shadow .18s, transform .18s;
+  }
+  .type-card:hover{
+    border-color: #b9d6f2;
+    box-shadow: var(--sh-2);
+    transform: translateY(-1px);
+  }
+  .type-card .txt{ display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .type-card .name{ font-size: 14px; font-weight: 600; }
+  .type-card .num{ font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+
+  /* 标签卡片 */
+  .tag-grid{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .tag-card{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 46px;
+    padding: 0 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: border-color .18s, background .18s, box-shadow .18s;
+  }
+  .tag-card:hover{
+    border-color: #b9d6f2;
+    background: var(--surface-hover);
+    box-shadow: var(--sh-1);
+  }
+  .tag-card .hash{ color: var(--text-3); font-size: 13px; }
+  .tag-card .tname{
+    font-size: 13px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tag-card .tnum{
+    margin-left: auto;
+    font-size: 11.5px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .tag-card.uncat .tname{ color: var(--text-2); font-weight: 400; }
+
+  /* 条目网格 */
+  .item-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: 10px;
+  }
+  .item{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 16px 10px 14px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    transition: background .18s, border-color .18s, box-shadow .18s;
+  }
+  .item:hover{
+    background: var(--surface);
+    border-color: #d8e6f4;
+    box-shadow: var(--sh-2);
+  }
+  .item .icon{ height: 64px; display: grid; place-items: center; margin-bottom: 10px; }
+  .item .title{
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .item .desc{
+    font-size: 11.5px;
+    color: var(--text-3);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+  .item .badge-missing{
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--c-danger);
+  }
+  .item.missing{ opacity: .55; }
+  .item.missing .title{ text-decoration: line-through; text-decoration-color: #b9b9b9; }
+
+  /* 返回 / 面包屑 */
+  .subhead{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 16px;
+  }
+  .back{
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 28px;
+    padding: 0 10px 0 6px;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-2);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background .18s, color .18s;
+  }
+  .back:hover{ background: #e6e9ee; color: var(--text); }
+  .subhead h2{
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .subhead .sub-num{
+    font-size: 12px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 右键菜单 */
+  .ctx-menu{
+    width: 176px;
+    padding: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border-mid);
+    border-radius: var(--r-md);
+    box-shadow: var(--sh-3);
+  }
+  .ctx-menu .mi{
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .ctx-menu .mi:hover{ background: #f0f4f9; }
+  .ctx-menu .mi.danger{ color: var(--c-danger); }
+  .ctx-menu .mi.danger:hover{ background: #fdf0ef; }
+  .ctx-menu .sep{
+    height: 1px;
+    margin: 4px 8px;
+    background: var(--border);
+  }
+  .ctx-wrap{
+    position: relative;
+    height: 700px;
+    background: var(--win-bg);
+  }
+  .ctx-menu.absolute{ position: absolute; left: 250px; top: 300px; }
+  .ctx-demo-note{
+    position: absolute;
+    left: 444px;
+    top: 306px;
+    width: 300px;
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.7;
+    background: #fffbe8;
+    border: 1px solid #f0e0a8;
+    border-radius: var(--r-sm);
+    padding: 10px 12px;
+  }
+
+  /* 弹窗 */
+  .modal-mask{
+    position: relative;
+    height: 700px;
+    background: rgba(28,32,38,.32);
+    display: grid;
+    place-items: center;
+  }
+  .modal{
+    width: 460px;
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-3);
+    overflow: hidden;
+  }
+  .modal-head{
+    padding: 18px 22px 0;
+  }
+  .modal-head h2{
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .modal-head p{
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--text-3);
+  }
+  .modal-body{
+    padding: 18px 22px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .field label{
+    display: block;
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 5px;
+  }
+  .field label .req{ color: var(--c-danger); margin-left: 2px; }
+  .field .row{ display: flex; gap: 8px; }
+  .input{
+    width: 100%;
+    height: 32px;
+    padding: 0 10px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface-sub);
+    border: 1px solid var(--border-mid);
+    border-radius: var(--r-sm);
+    outline: none;
+  }
+  .input:focus{
+    background: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,103,192,.15);
+  }
+  .input.placeholder{ color: var(--text-3); }
+  textarea.input{
+    height: 54px;
+    padding: 7px 10px;
+    resize: none;
+    line-height: 1.5;
+  }
+
+  /* 类型分段 */
+  .seg{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .seg .opt{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    border: 1px solid var(--border-mid);
+    border-radius: var(--r-sm);
+    background: var(--surface-sub);
+    font-size: 12.5px;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all .18s;
+  }
+  .seg .opt:hover{ border-color: var(--border-strong); background: #fff; }
+  .seg .opt.on{
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* 标签输入 */
+  .taginput{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 4px 8px;
+    background: var(--surface-sub);
+    border: 1px solid var(--border-mid);
+    border-radius: var(--r-sm);
+  }
+  .chip{
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 22px;
+    padding: 0 6px 0 8px;
+    background: #eef2f7;
+    border: 1px solid #dde5ee;
+    border-radius: 999px;
+    font-size: 12px;
+    color: #33475b;
+  }
+  .chip .x{ color: #8fa3b8; font-size: 11px; }
+  .taginput .entry{ font-size: 12.5px; color: var(--text-3); }
+
+  .modal-foot{
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 22px 18px;
+  }
+  .modal-foot .btn{ height: 32px; }
+
+  /* 空状态 */
+  .empty{
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--text-2);
+  }
+  .empty .big{ margin-bottom: 10px; }
+  .empty h3{ margin: 0; font-size: 15px; font-weight: 600; color: var(--text); }
+  .empty p{ margin: 0 0 14px; font-size: 12.5px; color: var(--text-3); }
+
+  /* 设计系统展示 */
+  .ds{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .card-panel{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 16px 18px;
+  }
+  .card-panel h3{
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .swatches{ display: flex; flex-wrap: wrap; gap: 10px; }
+  .sw{ width: 88px; }
+  .sw .box{
+    height: 42px;
+    border-radius: var(--r-sm);
+    border: 1px solid rgba(0,0,0,.08);
+  }
+  .sw .lbl{ font-size: 11px; color: var(--text-2); margin-top: 5px; line-height: 1.4; }
+  .sw .lbl code{ font-size: 10.5px; color: var(--text-3); }
+
+  .icon-row{ display: flex; gap: 28px; align-items: flex-end; }
+  .icon-row .ix{ text-align: center; }
+  .icon-row .ix .nm{ font-size: 11.5px; color: var(--text-2); margin-top: 4px; }
+  .icon-row .ix .sz{ font-size: 10.5px; color: var(--text-3); }
+
+  .type-scale div{ display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+  .type-scale .t{ color: var(--text-3); font-size: 11px; width: 132px; flex: 0 0 132px; }
+
+  /* SVG 图标统一 */
+  .svg-icon{ display: block; }
+</style>
+</head>
+<body>
+
+<!-- ===== 图标定义 ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- 程序：应用窗口 -->
+    <symbol id="i-program" viewBox="0 0 24 24">
+      <rect x="2.5" y="4" width="19" height="16" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+      <path d="M2.5 8.6h19" stroke="currentColor" stroke-width="1.7"/>
+      <circle cx="5.6" cy="6.3" r=".85" fill="currentColor"/>
+      <circle cx="8.3" cy="6.3" r=".85" fill="currentColor"/>
+      <path d="M6 12.4l2.2 2.2 3.2-3.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M13.6 15.4h4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </symbol>
+    <!-- 文档：纸张折角 -->
+    <symbol id="i-doc" viewBox="0 0 24 24">
+      <path d="M14.2 2.6H6.4A2 2 0 0 0 4.4 4.6v14.8a2 2 0 0 0 2 2h11.2a2 2 0 0 0 2-2V7.8z"
+            fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      <path d="M14 2.7v5.2h5.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      <path d="M7.8 13h8.4M7.8 16.4h5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </symbol>
+    <!-- 文件夹 -->
+    <symbol id="i-folder" viewBox="0 0 24 24">
+      <path d="M3 6.6a2 2 0 0 1 2-2h3.8l2 2.4H19a2 2 0 0 1 2 2v8.4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+            fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      <path d="M3 10.2h18" stroke="currentColor" stroke-width="1.7"/>
+    </symbol>
+    <!-- 网络连接：地球 -->
+    <symbol id="i-link" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+      <path d="M2.8 12h18.4" stroke="currentColor" stroke-width="1.7"/>
+      <path d="M12 2.8c2.6 2.6 3.9 5.8 3.9 9.2s-1.3 6.6-3.9 9.2c-2.6-2.6-3.9-5.8-3.9-9.2S9.4 5.4 12 2.8z"
+            fill="none" stroke="currentColor" stroke-width="1.7"/>
+    </symbol>
+    <!-- 通用小图标 -->
+    <symbol id="i-search" viewBox="0 0 24 24">
+      <circle cx="10.6" cy="10.6" r="6.4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M15.4 15.4L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-sort" viewBox="0 0 24 24">
+      <path d="M7 4v16M7 20l-3-3M7 20l3-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M17 20V4M17 4l-3 3M17 4l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-back" viewBox="0 0 24 24">
+      <path d="M14.5 5.5L8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-open" viewBox="0 0 24 24">
+      <path d="M14 4h6v6M20 4l-8.5 8.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M18.5 14.5v4.2a2 2 0 0 1-2 2H5.8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-reveal" viewBox="0 0 24 24">
+      <path d="M3 7.4a2 2 0 0 1 2-2h3.6l2 2.3H19a2 2 0 0 1 2 2v7.9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+            fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24">
+      <path d="M4 20h4l10-10-4-4L4 16z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      <path d="M13.5 5.5l4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24">
+      <path d="M4.5 7h15M9.5 4.5h5M6.5 7l.9 12.2a1.8 1.8 0 0 0 1.8 1.6h5.6a1.8 1.8 0 0 0 1.8-1.6L17.5 7"
+            fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-box" viewBox="0 0 24 24">
+      <path d="M3.5 8.2L12 3.6l8.5 4.6v7.6L12 20.4l-8.5-4.6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M3.8 8.4L12 12.9l8.2-4.5M12 12.9v7.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="doc-head">
+  <h1>LocalCubby · 界面设计稿 V1</h1>
+  <div class="meta">2026-11-16 · 静态设计稿（非最终实现）· 覆盖：根页面 / 标签页 / 类型页 / 搜索 / 右键菜单 / 添加弹窗 / 空状态与失效态</div>
+  <nav class="doc-nav">
+    <a href="#ds">00 设计变量</a>
+    <a href="#s1">01 根页面</a>
+    <a href="#s2">02 标签页</a>
+    <a href="#s3">03 类型页</a>
+    <a href="#s4">04 搜索</a>
+    <a href="#s5">05 右键菜单</a>
+    <a href="#s6">06 添加弹窗</a>
+    <a href="#s7">07 空状态 / 失效态</a>
+  </nav>
+</div>
+
+<!-- ================= 00 设计变量 ================= -->
+<section id="ds">
+  <div class="sec-title">
+    <span class="idx">00</span><h2>设计变量</h2>
+    <span class="hint">Windows 11 Fluent 中性色板 · 系统字体 · 8px 圆角体系</span>
+  </div>
+  <div class="ds">
+    <div class="card-panel">
+      <h3>颜色</h3>
+      <div class="swatches">
+        <div class="sw"><div class="box" style="background:#0067c0"></div><div class="lbl">主色<br><code>#0067c0</code></div></div>
+        <div class="sw"><div class="box" style="background:#f3f3f3"></div><div class="lbl">窗口底<br><code>#f3f3f3</code></div></div>
+        <div class="sw"><div class="box" style="background:#ffffff"></div><div class="lbl">卡片面<br><code>#ffffff</code></div></div>
+        <div class="sw"><div class="box" style="background:#e3e3e3"></div><div class="lbl">边框<br><code>#e3e3e3</code></div></div>
+        <div class="sw"><div class="box" style="background:#1b1b1b"></div><div class="lbl">主文字<br><code>#1b1b1b</code></div></div>
+        <div class="sw"><div class="box" style="background:#5c5c5c"></div><div class="lbl">次文字<br><code>#5c5c5c</code></div></div>
+        <div class="sw"><div class="box" style="background:#6b6b6b"></div><div class="lbl">弱文字<br><code>#6b6b6b</code></div></div>
+        <div class="sw"><div class="box" style="background:#c42b1c"></div><div class="lbl">危险<br><code>#c42b1c</code></div></div>
+      </div>
+    </div>
+
+    <div class="card-panel">
+      <h3>类型图标与配色</h3>
+      <div class="icon-row">
+        <div class="ix">
+          <svg class="svg-icon" width="44" height="44" style="color:#0067c0" aria-hidden="true"><use href="#i-program"/></svg>
+          <div class="nm">程序</div><div class="sz">#0067c0</div>
+        </div>
+        <div class="ix">
+          <svg class="svg-icon" width="44" height="44" style="color:#b45309" aria-hidden="true"><use href="#i-doc"/></svg>
+          <div class="nm">文档</div><div class="sz">#b45309</div>
+        </div>
+        <div class="ix">
+          <svg class="svg-icon" width="44" height="44" style="color:#a86500" aria-hidden="true"><use href="#i-folder"/></svg>
+          <div class="nm">文件夹</div><div class="sz">#a86500</div>
+        </div>
+        <div class="ix">
+          <svg class="svg-icon" width="44" height="44" style="color:#0f7490" aria-hidden="true"><use href="#i-link"/></svg>
+          <div class="nm">网络连接</div><div class="sz">#0f7490</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-panel">
+      <h3>字体层级（system-ui / Segoe UI / 微软雅黑）</h3>
+      <div class="type-scale">
+        <div><span class="t">页面标题 17px/600</span><span style="font-size:17px;font-weight:600">项目A</span></div>
+        <div><span class="t">卡片标题 14px/600</span><span style="font-size:14px;font-weight:600">程序</span></div>
+        <div><span class="t">条目标题 13px/500</span><span style="font-size:13px;font-weight:500">测试工具.exe</span></div>
+        <div><span class="t">分组标签 12.5px/600</span><span style="font-size:12.5px;font-weight:600;color:#5c5c5c">类型</span></div>
+        <div><span class="t">说明 / 计数 11.5px</span><span style="font-size:11.5px;color:#6b6b6b">串口压测工具</span></div>
+      </div>
+    </div>
+
+    <div class="card-panel">
+      <h3>形状与节奏</h3>
+      <div style="font-size:12.5px;color:#5c5c5c;line-height:1.9">
+        圆角：卡片 <code>8px</code> · 输入框/按钮/标签卡 <code>6px</code> · 弹窗 <code>10px</code> · 标签 chip 全圆<br>
+        间距：8 / 10 / 12 / 16 / 20 / 24<br>
+        阴影：默认 1px 微影，悬停 2px 8px，弹窗与右键菜单 8px 28px<br>
+        图标：条目 64px、类型卡 28px、设计展示 44px，线宽 1.7 统一<br>
+        动效：背景/边框/阴影 180ms，位移 1px，无缩放动画
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 01 根页面 ================= -->
+<section id="s1">
+  <div class="sec-title">
+    <span class="idx">01</span><h2>根页面</h2>
+    <span class="hint">打开程序后的第一屏：类型四卡片 + 标签卡片</span>
+  </div>
+  <div class="win">
+    <div class="titlebar">
+      <span class="app-name">LocalCubby</span>
+      <span class="win-btns"><span>—</span><span>□</span><span class="close">✕</span></span>
+    </div>
+    <div class="toolbar">
+      <div class="searchbox">
+        <svg width="16" height="16" style="color:#6b6b6b" aria-hidden="true"><use href="#i-search"/></svg>
+        <input placeholder="搜索标题、说明、路径、标签" readonly>
+      </div>
+      <button class="btn">
+        <svg width="15" height="15" aria-hidden="true"><use href="#i-sort"/></svg>
+        添加顺序
+      </button>
+      <button class="btn btn-primary">
+        <svg width="15" height="15" aria-hidden="true"><use href="#i-plus"/></svg>
+        添加
+      </button>
+    </div>
+    <div class="content">
+      <div class="group">
+        <div class="group-head"><h3>类型</h3><span class="count">共 6 项</span></div>
+        <div class="type-grid">
+          <div class="type-card">
+            <svg width="28" height="28" style="color:#0067c0" aria-hidden="true"><use href="#i-program"/></svg>
+            <div class="txt"><span class="name">程序</span><span class="num">2 项</span></div>
+          </div>
+          <div class="type-card">
+            <svg width="28" height="28" style="color:#b45309" aria-hidden="true"><use href="#i-doc"/></svg>
+            <div class="txt"><span class="name">文档</span><span class="num">2 项</span></div>
+          </div>
+          <div class="type-card">
+            <svg width="28" height="28" style="color:#a86500" aria-hidden="true"><use href="#i-folder"/></svg>
+            <div class="txt"><span class="name">文件夹</span><span class="num">1 项</span></div>
+          </div>
+          <div class="type-card">
+            <svg width="28" height="28" style="color:#0f7490" aria-hidden="true"><use href="#i-link"/></svg>
+            <div class="txt"><span class="name">网络连接</span><span class="num">1 项</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-head"><h3>标签</h3><span class="count">共 4 个</span></div>
+        <div class="tag-grid">
+          <div class="tag-card"><span class="hash">#</span><span class="tname">项目A</span><span class="tnum">3</span></div>
+          <div class="tag-card"><span class="hash">#</span><span class="tname">测试工具</span><span class="tnum">2</span></div>
+          <div class="tag-card"><span class="hash">#</span><span class="tname">协议文档</span><span class="tnum">1</span></div>
+          <div class="tag-card"><span class="hash">#</span><span class="tname">设备调试</span><span class="tnum">1</span></div>
+        </div>
+        <div class="tag-grid" style="margin-top:10px">
+          <div class="tag-card uncat"><span class="hash">·</span><span class="tname">未分类</span><span class="tnum">1</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <b>要点</b>
+    <ul>
+      <li>类型四卡片与标签卡片放在同一层级、同一交互：点任意一张进入条目网格</li>
+      <li>标签卡片显示条目数，按中文拼音排序；「未分类」始终单独一排、样式弱化</li>
+      <li>空分组不出现在这里（例如没有任何网络连接时，该卡片隐藏，避免误导）</li>
+      <li>排序切换按钮显示当前模式（添加顺序 / 名称），点击即切换并记住</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 02 标签页 ================= -->
+<section id="s2">
+  <div class="sec-title">
+    <span class="idx">02</span><h2>标签页（条目网格）</h2>
+    <span class="hint">点「项目A」后的形态，条目 64px 图标 + 标题 + 说明</span>
+  </div>
+  <div class="win">
+    <div class="titlebar">
+      <span class="app-name">LocalCubby</span>
+      <span class="win-btns"><span>—</span><span>□</span><span class="close">✕</span></span>
+    </div>
+    <div class="toolbar">
+      <div class="searchbox">
+        <svg width="16" height="16" style="color:#6b6b6b" aria-hidden="true"><use href="#i-search"/></svg>
+        <input placeholder="搜索标题、说明、路径、标签" readonly>
+      </div>
+      <button class="btn">
+        <svg width="15" height="15" aria-hidden="true"><use href="#i-sort"/></svg>
+        添加顺序
+      </button>
+      <button class="btn btn-primary">
+        <svg width="15" height="15" aria-hidden="true"><use href="#i-plus"/></svg>
+        添加
+      </button>
+    </div>
+    <div class="content">
+      <div class="subhead">
+        <button class="back">
+          <svg width="15" height="15" aria-hidden="true"><use href="#i-back"/></svg>
+          返回
+        </button>
+        <h2>项目A</h2>
+        <span class="sub-num">3 项</span>
+      </div>
+      <div class="item-grid">
+        <div class="item">
+          <div class="icon"><svg width="64" height="64" style="color:#0067c0" aria-hidden="true"><use href="#i-program"/></svg></div>
+          <div class="title">测试工具.exe</div>
+          <div class="desc">项目A 串口压测工具</div>
+        </div>
+        <div class="item">
+          <div class="icon"><svg width="64" height="64" style="color:#b45309" aria-hidden="true"><use href="#i-doc"/></svg></div>
+          <div class="title">项目A设计.md</div>
+          <div class="desc">接口与流程设计说明</div>
+        </div>
+        <div class="item">
+          <div class="icon"><svg width="64" height="64" style="color:#0f7490" aria-hidden="true"><use href="#i-link"/></svg></div>
+          <div class="title">设备管理</div>
+          <div class="desc">192.168.0.104 后台</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <b>要点</b>
+    <ul>
+      <li>双击 = 打开目标：本地路径交给系统关联，网址交给默认浏览器</li>
+      <li>同一工具因打了多个标签，会同时出现在「项目A」和「测试工具」两个分组里（标签的本质，接受重复）</li>
+      <li>标题、说明均单行省略；完整路径不显示在卡片上，避免噪音</li>
+      <li>“返回”回到根页面；窗口尺寸与位置记住，下次打开保持</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 03 类型页 ================= -->
+<section id="s3">
+  <div class="sec-title">
+    <span class="idx">03</span><h2>类型页</h2>
+    <span class="hint">点「程序」后的形态，与标签页同一套网格</span>
+  </div>
+  <div class="win">
+    <div class="titlebar">
+      <span class="app-name">LocalCubby</span>
+      <span class="win-btns"><span>—</span><span>□</span><span class="close">✕</span></span>
+    </div>
+    <div class="toolbar">
+      <div class="searchbox">
+        <svg width="16" height="16" style="color:#6b6b6b" aria-hidden="true"><use href="#i-search"/></svg>
+        <input placeholder="搜索标题、说明、路径、标签" readonly>
+      </div>
+      <button class="btn">
+        <svg width="15" height="15" aria-hidden="true"><use href="#i-sort"/></svg>
+        名称
+      </button>
+      <button class="btn btn-primary">
+        <svg width="15" height="15" aria-hidden="true"><use href="#i-plus"/></svg>
+        添加
+      </button>
+    </div>
+    <div class="content">
+      <div class="subhead">
+        <button class="back">
+          <svg width="15" height="15" aria-hidden="true"><use href="#i-back"/></svg>
+          返回
+        </button>
+        <h2>程序</h2>
+        <span class="sub-num">2 项</span>
+      </div>
+      <div class="item-grid">
+        <div class="item">
+          <div class="icon"><svg width="64" height="64" style="color:#0067c0" aria-hidden="true"><use href="#i-program"/></svg></div>
+          <div class="title">测试工具.exe</div>
+          <div class="desc">项目A 串口压测工具</div>
+        </div>
+        <div class="item">
+          <div class="icon"><svg width="64" height="64" style="color:#0067c0" aria-hidden="true"><use href="#i-program"/></svg></div>
+          <div class="title">启动.bat</div>
+          <div class="desc">示例程序快速启动</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <b>要点</b>
+    <ul>
+      <li>「名称」排序为中文拼音序并记住选择；此处演示已切到名称排序</li>
+      <li>类型页与标签页共用同一个条目卡片组件，只有数据来源不同</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 04 搜索 ================= -->
+<section id="s4">
+  <div class="sec-title">
+    <span class="idx">04</span><h2>搜索状态</h2>
+    <span class="hint">输入即筛选，跨全库展开扁平结果</span>
+  </div>
+  <div class="win">
+    <div class="titlebar">
+      <span class="app-name">LocalCubby</span>
+      <span class="win-btns"><span>—</span><span>□</span><span class="close">✕</span></span>
+    </div>
+    <div class="toolbar">
+      <div class="searchbox focused">
+        <svg width="16" height="16" style="color:#0067c0" aria-hidden="true"><use href="#i-search"/></svg>
+        <span class="ph" style="color:#1b1b1b">项目A</span>
+        <span style="margin-left:auto;color:#6b6b6b;font-size:12px">✕</span>
+      </div>
+      <button class="btn">
+        <svg width="15" height="15" aria-hidden="true"><use href="#i-sort"/></svg>
+        添加顺序
+      </button>
+      <button class="btn btn-primary">
+        <svg width="15" height="15" aria-hidden="true"><use href="#i-plus"/></svg>
+        添加
+      </button>
+    </div>
+    <div class="content">
+      <div class="group-head" style="margin-bottom:14px">
+        <h3>搜索结果</h3><span class="count">3 项 · 匹配标题 / 说明 / 路径 / 标签</span>
+      </div>
+      <div class="item-grid">
+        <div class="item">
+          <div class="icon"><svg width="64" height="64" style="color:#0067c0" aria-hidden="true"><use href="#i-program"/></svg></div>
+          <div class="title">测试工具.exe</div>
+          <div class="desc">项目A 串口压测工具</div>
+        </div>
+        <div class="item">
+          <div class="icon"><svg width="64" height="64" style="color:#b45309" aria-hidden="true"><use href="#i-doc"/></svg></div>
+          <div class="title">项目A设计.md</div>
+          <div class="desc">接口与流程设计说明</div>
+        </div>
+        <div class="item">
+          <div class="icon"><svg width="64" height="64" style="color:#0f7490" aria-hidden="true"><use href="#i-link"/></svg></div>
+          <div class="title">设备管理</div>
+          <div class="desc">192.168.0.104 后台</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <b>要点</b>
+    <ul>
+      <li>根页面输入搜索词直接替换卡片区域为结果网格，不需要先选标签</li>
+      <li>匹配范围包含标签名，所以「项目A」能命中打了该标签、但标题里没有“项目A”的条目</li>
+      <li>不区分大小写、子串匹配、无历史记录、无高亮；清空即回到卡片</li>
+      <li>无结果时显示一行「没有匹配的条目」+ 清空搜索按钮，不显示空网格</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 05 右键菜单 ================= -->
+<section id="s5">
+  <div class="sec-title">
+    <span class="idx">05</span><h2>右键菜单</h2>
+    <span class="hint">打开 / 打开所在目录 / 编辑 / 删除</span>
+  </div>
+  <div class="win">
+    <div class="titlebar">
+      <span class="app-name">LocalCubby</span>
+      <span class="win-btns"><span>—</span><span>□</span><span class="close">✕</span></span>
+    </div>
+    <div class="toolbar">
+      <div class="searchbox">
+        <svg width="16" height="16" style="color:#6b6b6b" aria-hidden="true"><use href="#i-search"/></svg>
+        <input placeholder="搜索标题、说明、路径、标签" readonly>
+      </div>
+      <button class="btn">
+        <svg width="15" height="15" aria-hidden="true"><use href="#i-sort"/></svg>
+        添加顺序
+      </button>
+      <button class="btn btn-primary">
+        <svg width="15" height="15" aria-hidden="true"><use href="#i-plus"/></svg>
+        添加
+      </button>
+    </div>
+    <div class="ctx-wrap">
+      <div class="content" style="padding-top:0">
+        <div class="subhead">
+          <button class="back">
+            <svg width="15" height="15" aria-hidden="true"><use href="#i-back"/></svg>
+            返回
+          </button>
+          <h2>项目A</h2>
+          <span class="sub-num">3 项</span>
+        </div>
+        <div class="item-grid">
+          <div class="item" style="background:#ffffff;border-color:#d8e6f4;box-shadow:0 2px 8px rgba(0,0,0,.07)">
+            <div class="icon"><svg width="64" height="64" style="color:#0067c0" aria-hidden="true"><use href="#i-program"/></svg></div>
+            <div class="title">测试工具.exe</div>
+            <div class="desc">项目A 串口压测工具</div>
+          </div>
+          <div class="item">
+            <div class="icon"><svg width="64" height="64" style="color:#b45309" aria-hidden="true"><use href="#i-doc"/></svg></div>
+            <div class="title">项目A设计.md</div>
+            <div class="desc">接口与流程设计说明</div>
+          </div>
+          <div class="item">
+            <div class="icon"><svg width="64" height="64" style="color:#0f7490" aria-hidden="true"><use href="#i-link"/></svg></div>
+            <div class="title">设备管理</div>
+            <div class="desc">192.168.0.104 后台</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ctx-menu absolute">
+        <div class="mi"><svg width="15" height="15" style="color:#5c5c5c" aria-hidden="true"><use href="#i-open"/></svg>打开</div>
+        <div class="mi"><svg width="15" height="15" style="color:#5c5c5c" aria-hidden="true"><use href="#i-reveal"/></svg>打开所在目录</div>
+        <div class="sep"></div>
+        <div class="mi"><svg width="15" height="15" style="color:#5c5c5c" aria-hidden="true"><use href="#i-edit"/></svg>编辑</div>
+        <div class="mi danger"><svg width="15" height="15" aria-hidden="true"><use href="#i-trash"/></svg>删除</div>
+      </div>
+
+      <div class="ctx-demo-note">
+        <b>说明</b><br>
+        1. 右键作用对象高亮（白底 + 淡蓝边框）<br>
+        2. 网络连接类型不显示「打开所在目录」<br>
+        3. 「删除」走系统二次确认弹窗<br>
+        4. 菜单超出窗口下边界时自动上翻
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 06 添加弹窗 ================= -->
+<section id="s6">
+  <div class="sec-title">
+    <span class="idx">06</span><h2>添加 / 编辑弹窗</h2>
+    <span class="hint">同一表单；拖拽文件进来时路径、标题、类型已预填</span>
+  </div>
+  <div class="win">
+    <div class="titlebar">
+      <span class="app-name">LocalCubby</span>
+      <span class="win-btns"><span>—</span><span>□</span><span class="close">✕</span></span>
+    </div>
+    <div class="modal-mask">
+      <div class="modal">
+        <div class="modal-head">
+          <h2>添加条目</h2>
+          <p>说明与标签可以留空，标题建议写清楚，它是搜索的主要依据</p>
+        </div>
+        <div class="modal-body">
+          <div class="field">
+            <label>路径 / 网址 <span class="req">*</span></label>
+            <div class="row">
+              <input class="input" value="D:\项目A\bin\测试工具.exe" readonly>
+              <button class="btn" style="height:32px">浏览…</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>标题 <span class="req">*</span></label>
+            <input class="input" value="测试工具.exe" readonly>
+          </div>
+          <div class="field">
+            <label>说明</label>
+            <textarea class="input" readonly>项目A 串口压测工具，支持 115200 波特率</textarea>
+          </div>
+          <div class="field">
+            <label>类型</label>
+            <div class="seg">
+              <div class="opt on">
+                <svg width="14" height="14" aria-hidden="true"><use href="#i-program"/></svg>程序
+              </div>
+              <div class="opt"><svg width="14" height="14" aria-hidden="true"><use href="#i-doc"/></svg>文档</div>
+              <div class="opt"><svg width="14" height="14" aria-hidden="true"><use href="#i-folder"/></svg>文件夹</div>
+              <div class="opt"><svg width="14" height="14" aria-hidden="true"><use href="#i-link"/></svg>网络连接</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>标签</label>
+            <div class="taginput">
+              <span class="chip">项目A <span class="x">✕</span></span>
+              <span class="chip">测试工具 <span class="x">✕</span></span>
+              <span class="entry">输入标签后回车…</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn">取消</button>
+          <button class="btn btn-primary">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <b>要点</b>
+    <ul>
+      <li>类型按扩展名自动推断并高亮，仍可手动改（选「网络连接」时路径框变为网址输入框，浏览按钮隐藏）</li>
+      <li>标签输入带已有标签自动补全下拉，回车成 chip，点 ✕ 移除；保存时去首尾空格并去重</li>
+      <li>拖拽文件/文件夹到主窗口即打开本表单，路径与标题已填好，只需补说明和标签</li>
+      <li>路径/标题为空时「保存」置灰；编辑态标题改为「编辑条目」，行为完全一致</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 07 空状态 / 失效态 ================= -->
+<section id="s7">
+  <div class="sec-title">
+    <span class="idx">07</span><h2>空状态与失效态</h2>
+    <span class="hint">空库引导；目标被删/挪走后灰化提示</span>
+  </div>
+
+  <div class="win" style="height:420px">
+    <div class="titlebar">
+      <span class="app-name">LocalCubby</span>
+      <span class="win-btns"><span>—</span><span>□</span><span class="close">✕</span></span>
+    </div>
+    <div class="toolbar">
+      <div class="searchbox">
+        <svg width="16" height="16" style="color:#6b6b6b" aria-hidden="true"><use href="#i-search"/></svg>
+        <input placeholder="搜索标题、说明、路径、标签" readonly>
+      </div>
+      <button class="btn btn-primary">
+        <svg width="15" height="15" aria-hidden="true"><use href="#i-plus"/></svg>
+        添加
+      </button>
+    </div>
+    <div class="content">
+      <div class="empty">
+        <svg class="big" width="56" height="56" style="color:#c4c4c4" aria-hidden="true"><use href="#i-box"/></svg>
+        <h3>还没有收录任何东西</h3>
+        <p>把程序、文档、文件夹拖进窗口，或点「添加」手动填写</p>
+        <button class="btn btn-primary">
+          <svg width="15" height="15" aria-hidden="true"><use href="#i-plus"/></svg>
+          添加第一个条目
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="win" style="height:300px;margin-top:20px">
+    <div class="titlebar">
+      <span class="app-name">LocalCubby</span>
+      <span class="win-btns"><span>—</span><span>□</span><span class="close">✕</span></span>
+    </div>
+    <div class="content" style="padding-top:20px">
+      <div class="subhead">
+        <button class="back">
+          <svg width="15" height="15" aria-hidden="true"><use href="#i-back"/></svg>
+          返回
+        </button>
+        <h2>项目B</h2>
+        <span class="sub-num">3 项</span>
+      </div>
+      <div class="item-grid">
+        <div class="item">
+          <div class="icon"><svg width="64" height="64" style="color:#0067c0" aria-hidden="true"><use href="#i-program"/></svg></div>
+          <div class="title">项目B.bat</div>
+          <div class="desc">项目B 一键启动</div>
+        </div>
+        <div class="item missing">
+          <div class="icon"><svg width="64" height="64" style="color:#7d7d7d" aria-hidden="true"><use href="#i-doc"/></svg></div>
+          <div class="title">项目b.md</div>
+          <div class="desc">需求与验收记录</div>
+          <div class="badge-missing">路径不存在</div>
+        </div>
+        <div class="item">
+          <div class="icon"><svg width="64" height="64" style="color:#a86500" aria-hidden="true"><use href="#i-folder"/></svg></div>
+          <div class="title">项目B资料</div>
+          <div class="desc">D:\项目B</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <b>要点</b>
+    <ul>
+      <li>空库只显示引导文案与「添加第一个条目」，不显示空卡片</li>
+      <li>失效条目：整体降到 55% 透明度、图标转灰、标题加删除线，并标注红色「路径不存在」</li>
+      <li>失效不做自动删除；点右键「编辑」改路径即可恢复，或手动「删除」清理</li>
+      <li>检测时机：启动时全量检查一次 + 窗口重新获得焦点时静默重查</li>
+    </ul>
+  </div>
+</section>
+
+<div style="max-width:1000px;margin:0 auto 64px;color:#8a8a8a;font-size:12px;">
+  LocalCubby 设计稿 V1 · 静态 HTML，仅用于视觉与交互审核；确认后据此实现 Electron + React 界面
+</div>
+
+</body>
+</html>
